@@ -10,12 +10,12 @@ H, W = 5, 5
 input_dim = W*H + 1
 
 # Number of historical states to use for Q network input.
-theta_states = 3
+phi_states = 3
 
 # Dense layer sizes
 layer_sizes = 1024, 512, len(snake.dirs)
 
-layer_input = layers.Input(shape=(theta_states, input_dim))
+layer_input = layers.Input(shape=(phi_states, input_dim))
 layer = layers.Flatten()(layer_input)
 for size in layer_sizes:
     layer = layers.Dense(size, activation='relu',
@@ -55,13 +55,13 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
 
     target.set_weights(model.get_weights())
 
-    # A replay tuple is (a, r, terminal, theta, theta_).
+    # A replay tuple is (a, r, terminal, phi, phi_).
     replay_a = -np.ones(num_replay, dtype=np.int8)
     replay_r = np.zeros(num_replay)
     replay_p = np.ones(num_replay)
     replay_terminal = np.zeros(num_replay, dtype=np.bool)
-    replay_theta  = np.zeros((num_replay, theta_states, input_dim))
-    replay_theta_ = np.zeros((num_replay, theta_states, input_dim))
+    replay_phi  = np.zeros((num_replay, phi_states, input_dim))
+    replay_phi_ = np.zeros((num_replay, phi_states, input_dim))
 
     g, replay_i, Rtot, high_score = None, 0, 0, 0
 
@@ -69,17 +69,17 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
 
         if g is None or g.is_over:
             g = snake.game.from_size(W, H)
-            theta = [state(g)]*theta_states
+            phi = [state(g)]*phi_states
 
-        theta.append(state(g))
-        theta = theta[-theta_states:]
+        phi.append(state(g))
+        phi = phi[-phi_states:]
         score = g.score
 
         # ε-greedy policy
         if np.random.random() < epsilon:
             a = np.random.choice(len(snake.dirs))
         else:
-            q = model.predict(np.array([theta]))
+            q = model.predict(np.array([phi]))
             a = q.argmax()
 
         # Cast the dice!
@@ -92,8 +92,8 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
             high_score = g.score
             print('New high score:', high_score)
 
-        theta_ = theta + [state(g)]
-        theta_ = theta_[-theta_states:]
+        phi_ = phi + [state(g)]
+        phi_ = phi_[-phi_states:]
         r = float(-10 if g.is_over else g.score - score)
         Rtot += r
 
@@ -105,8 +105,8 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
         replay_r[replay_i] = r
         replay_p[replay_i] = replay_p.max()
         replay_terminal[replay_i] = g.is_over
-        replay_theta[replay_i, :, :] = theta
-        replay_theta_[replay_i, :, :] = theta_
+        replay_phi[replay_i, :, :] = phi
+        replay_phi_[replay_i, :, :] = phi_
 
         # Don't do learning until we have at least some experience, and only
         # each replay_period'th iteration.
@@ -117,14 +117,14 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
         jmax = min(i, num_replay)
         mb_idxs = np.random.choice(jmax, p=replay_p[:jmax]/replay_p[:jmax].sum(),
                                    size=num_batch, replace=False)
-        mb_theta  = replay_theta[mb_idxs, :, :]
-        mb_theta_ = replay_theta_[mb_idxs, :, :]
-        mb_a      = replay_a[mb_idxs]
+        mb_phi  = replay_phi[mb_idxs, :, :]
+        mb_phi_ = replay_phi_[mb_idxs, :, :]
+        mb_a    = replay_a[mb_idxs]
         mb_nonterm, = np.nonzero(replay_terminal[mb_idxs] == 0)
 
         # Predict Q of s and s_ for minibatch
-        mb_q  = model.predict(mb_theta)
-        mb_q_ = target.predict(mb_theta_)
+        mb_q  = model.predict(mb_phi)
+        mb_q_ = target.predict(mb_phi_)
 
         # Set targets for minibatch, setting the target for each
         # action-state to the predicted value, except for the chosen action
@@ -139,7 +139,7 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
         replay_p[mb_idxs] = (1.0 + np.abs(mb_y[js, mb_a] - mb_q[js, mb_a]))**alpha
 
         # Finally learn
-        L = model.train_on_batch(replay_theta[mb_idxs, :, :], mb_y)
+        L = model.train_on_batch(replay_phi[mb_idxs, :, :], mb_y)
 
         if (i % num_copy_target) == 0:
             target.set_weights(model.get_weights())
