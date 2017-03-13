@@ -37,10 +37,12 @@ def state(g):
     return s
 
 def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
-         num_iter=int(2e6), num_replay=int(1e6), replay_period=4, gamma=0.8):
+         num_copy_target=2000, num_iter=int(2e6), num_replay=int(1e6),
+         replay_period=4, gamma=0.8):
     h5_fn, = args
     print('Compiling model', end='... ', file=sys.stderr)
     model.compile(optimizer=optimizer, loss=loss)
+    target = models.model_from_yaml(model.to_yaml())
     print('done', file=sys.stderr)
 
     print('Loading weights', end='... ', file=sys.stderr)
@@ -50,6 +52,8 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
         print(e, file=sys.stderr)
     else:
         print('done', file=sys.stderr)
+
+    target.set_weights(model.get_weights())
 
     # A replay tuple is (a, r, terminal, theta, theta_).
     replay_a = -np.ones(num_replay, dtype=np.int8)
@@ -120,7 +124,7 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
 
         # Predict Q of s and s_ for minibatch
         mb_q  = model.predict(mb_theta)
-        mb_q_ = model.predict(mb_theta_)
+        mb_q_ = target.predict(mb_theta_)
 
         # Set targets for minibatch, setting the target for each
         # action-state to the predicted value, except for the chosen action
@@ -137,9 +141,10 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
         # Finally learn
         L = model.train_on_batch(replay_theta[mb_idxs, :, :], mb_y)
 
-        if (i % 1000) == 0:
+        if (i % num_copy_target) == 0:
+            target.set_weights(model.get_weights())
             print(' -- Saving DQN --')
-            print('        Average R:', Rtot/1000.)
+            print('        Average R:', Rtot/num_copy_target)
             print('       High score:', high_score)
             print('    Training loss:', L)
             print(' Minibatch mean Q:', np.r_[mb_q].mean(axis=0))
