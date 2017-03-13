@@ -93,6 +93,17 @@ def learn_Q(t_max=1000):
             Rtot = 0
     return Q
 
+def q(s, Q):
+    return Q[(wholeaxis,) + tuple(s)]
+
+def load(args):
+    Q = np.load(sys.argv[1])
+    print('num empty Q:', 100.*np.count_nonzero(Q == 0.0)/Q.size, '%')
+    return (Q,)
+
+def phi(phi, g):
+    return state(g)
+
 if __name__ == '__main__':
     Q = learn_Q()
     np.save('Q', Q)

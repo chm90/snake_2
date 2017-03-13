@@ -6,14 +6,16 @@ import snake
 
 H, W = 5, 5
 
-# W*H snake segment positions, then the apple's position.
-input_dim = W*H + 1
+## W*H snake segment positions, then the apple's position.
+#input_dim = W*H + 1
+# Board is W*H.
+input_dim = W*H
 
 # Number of historical states to use for Q network input.
 phi_states = 3
 
 # Dense layer sizes
-layer_sizes = [32]*4 + [len(snake.dirs)]
+layer_sizes = [128]*3 + [len(snake.dirs)]
 
 layer_input = layers.Input(shape=(phi_states, input_dim))
 layer = layers.Flatten()(layer_input)
@@ -33,16 +35,33 @@ optimizer = optimizers.Adadelta(lr=0.8)
 
 def state(g):
     w, h = g.board.shape
-    s = np.zeros(w*h + 1)
-    segs = (1.0 + np.array(g.segments).dot((1, w))) #/ float(w*h)
-    s[:segs.size] = segs
-    if np.any(g.board == snake.apple_i):
-        s[-1] = (1.0 + g.random_cell(item=snake.apple).dot((1, w))) #/ float(w*h)
-    return s
+    #s = np.zeros(w*h + 1)
+    #segs = (1.0 + np.array(g.segments).dot((1, w))) #/ float(w*h)
+    #s[:segs.size] = segs
+    #if np.any(g.board == snake.apple_i):
+    #    s[-1] = (1.0 + g.random_cell(item=snake.apple).dot((1, w))) #/ float(w*h)
+    return g.board.reshape(w*h)
 
-def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
+def init(args):
+    h5_fn, = args
+    model.compile(optimizer=optimizer, loss=loss)
+    model.load_weights(h5_fn)
+    return (model,)
+
+def phi(phi, g):
+    s = state(g)
+    if phi is None:
+        return [s]*phi_states
+    else:
+        phi.append(s)
+        return phi[-phi_states:]
+
+def q(phi, model):
+    return model.predict(np.array([phi]))[0, :]
+
+def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=50,
          num_copy_target=2000, num_iter=int(2e6), num_replay=int(1e6),
-         replay_period=4, gamma=0.8):
+         replay_period=4, gamma=0.5, t_last_reward_max=25):
     h5_fn, = args
     print('Compiling model', end='... ', file=sys.stderr)
     model.compile(optimizer=optimizer, loss=loss)
@@ -73,7 +92,9 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
 
         if g is None or g.is_over:
             g = snake.game.from_size(W, H)
+            t, t_last_reward = 0, 0
             phi = [state(g)]*phi_states
+            phi_ = list(phi)
 
         phi.append(state(g))
         phi = phi[-phi_states:]
@@ -83,22 +104,28 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
         if np.random.random() < epsilon:
             a = np.random.choice(len(snake.dirs))
         else:
-            q = model.predict(np.array([phi]))
-            a = q.argmax()
+            a = q(phi, model).argmax()
 
         # Cast the dice!
         try:
             g.next(snake.dirs[a])
-        except snake.GameOver:
+        except snake.GameOver as e:
             pass
 
         if g.score > high_score:
             high_score = g.score
             print('New high score:', high_score)
 
-        phi_ = phi + [state(g)]
+        phi_.append(state(g))
         phi_ = phi_[-phi_states:]
         r = float(-10 if g.is_over else g.score - score)
+
+        # Track time of last reward. Abandon cowardly policies.
+        t += 1
+        t_last_reward = t if r > 0 else t_last_reward
+        if t - t_last_reward >= t_last_reward_max:
+            g = None
+
         Rtot += r
 
         # Record in replay memory
@@ -108,7 +135,7 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=500,
         replay_a[replay_i] = a
         replay_r[replay_i] = r
         replay_p[replay_i] = replay_p.max()
-        replay_terminal[replay_i] = g.is_over
+        replay_terminal[replay_i] = g is None or g.is_over
         replay_phi[replay_i, :, :] = phi
         replay_phi_[replay_i, :, :] = phi_
 
