@@ -13,13 +13,13 @@ python3 snake.py
 Feel like learning the snaking?
 
 ```python
-python3 rl.py
+python3 qlearn.py Q.npy
 ```
 
 Feel like watching the learned snaking?
 
 ```python
-python3 autoplay.py
+python3 autoplay.py Q.npy
 ```
 
 Snake it don't break it.

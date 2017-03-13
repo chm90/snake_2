@@ -30,6 +30,10 @@ class game(object):
         if not np.any(game.board == apple_i):
             game.put_apple()
 
+    @classmethod
+    def from_size(cls, width, height):
+        return cls(np.zeros((width, height)), (width//2, height//2))
+
     def is_in_bounds(game, x, y):
         height, width = game.board.shape
         return x >= 0 and y >= 0 and x < width and y < height
@@ -96,7 +100,7 @@ class game(object):
             game.set_cell(x, y, empty)
 
 def main(width=5, height=5):
-    g = game(np.zeros((width, height)), (width//2, height//2))
+    g = game.from_size(width, height)
     with termin.inputs() as inputs:
         direction = right
         while not g.is_over:
