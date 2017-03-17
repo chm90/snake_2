@@ -123,7 +123,7 @@ def copy_model(model):
     return models.model_from_yaml(model.to_yaml())
 
 def main(args=sys.argv[1:], alpha=0.0, action_sigma=1e-2, num_batch=200,
-         num_copy_target=50, num_iter=int(2e6), num_replay=int(1e4),
+         num_copy_target=400, num_iter=int(2e6), num_replay=int(1e4),
          replay_period=4, gamma=0.5, t_last_reward_max=25):
 
     actor_h5_fn, critic_h5_fn = args + ['actor.h5', 'critic.h5'][:2 - len(args)]
@@ -239,22 +239,24 @@ def main(args=sys.argv[1:], alpha=0.0, action_sigma=1e-2, num_batch=200,
         L  = critic.train_on_batch([mb_phi, mb_a], mb_y)
         L += actor_q.train_on_batch(mb_phi, np.zeros(mb_y.shape))
 
+        print('done', file=sys.stderr)
+
         # Soft update target networks.
-        #print(critic_target.get_weights())
+        # NOTE Disabled in favor of copying the networks below.
         #critic_target.soft_update(critic)
         #actor_target.soft_update(actor)
 
-        print('done', file=sys.stderr)
-
         if (i % num_copy_target) == 0:
-            target.set_weights(model.get_weights())
+            actor_target.set_weights(actor.get_weights())
+            critic_target.set_weights(critic.get_weights())
             print(' -- Saving DQN --')
             print('        Average R:', Rtot/num_copy_target)
             print('       High score:', high_score)
             print('    Training loss:', L)
             print(' Minibatch mean Q:', np.r_[mb_q].mean(axis=0))
             print(' Minibatch mean y:', mb_y.mean(axis=0))
-            model.save(h5_fn)
+            actor.save(actor_h5_fn)
+            critic.save(critic_q_h5_fn)
             Rtot = 0
 
     model.save(h5_fn)
