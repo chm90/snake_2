@@ -234,8 +234,8 @@ def main(args=sys.argv[1:], alpha=0.0, action_sigma=1e-2, num_batch=200,
         replay_p[mb_idxs] = (1.0 + np.abs(mb_y - mb_q))**alpha
 
         # Finally learn. First optimize critic, then optimize actor_q.
-        L  = critic.train_on_batch([mb_phi, mb_a], mb_y)
-        L += actor_q.train_on_batch(mb_phi, np.zeros(mb_y.shape))
+        Lc = critic.train_on_batch([mb_phi, mb_a], mb_y)
+        La = actor_q.train_on_batch(mb_phi, np.zeros(mb_y.shape))
 
         # Soft update target networks.
         # NOTE Disabled in favor of copying the networks below.
@@ -246,16 +246,17 @@ def main(args=sys.argv[1:], alpha=0.0, action_sigma=1e-2, num_batch=200,
             actor_target.set_weights(actor.get_weights())
             critic_target.set_weights(critic.get_weights())
             print(' -- Saving DDPG networks --')
-            print('        Average R:', Rtot/num_copy_target)
-            print('       High score:', high_score)
-            print('    Training loss:', L)
-            print(' Minibatch mean Q:', np.r_[mb_q].mean(axis=0))
-            print(' Minibatch mean y:', mb_y.mean(axis=0))
+            print('         Average R:', Rtot/num_copy_target)
+            print('        High score:', high_score)
+            print(' Actor/critic loss:', La, Lc)
+            print('  Minibatch mean Q:', np.r_[mb_q].mean(axis=0))
+            print('  Minibatch mean y:', mb_y.mean(axis=0))
             actor.save(actor_h5_fn)
             critic.save(critic_h5_fn)
             Rtot = 0
 
-    model.save(h5_fn)
+    actor.save(actor_h5_fn)
+    critic.save(critic_h5_fn)
 
 if __name__ == "__main__":
     main()
