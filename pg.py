@@ -122,8 +122,8 @@ def action(phi, actor, critic):
 def copy_model(model):
     return models.model_from_yaml(model.to_yaml())
 
-def main(args=sys.argv[1:], alpha=0.0, action_sigma=1e-2, num_batch=500,
-         num_copy_target=2000, num_iter=int(2e6), num_replay=int(1e4),
+def main(args=sys.argv[1:], alpha=0.0, action_sigma=1e-2, num_batch=200,
+         num_copy_target=50, num_iter=int(2e6), num_replay=int(1e4),
          replay_period=4, gamma=0.5, t_last_reward_max=25):
 
     actor_h5_fn, critic_h5_fn = args + ['actor.h5', 'critic.h5'][:2 - len(args)]
