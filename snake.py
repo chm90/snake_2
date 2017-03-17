@@ -102,7 +102,7 @@ class game(object):
 
     def __str__(game):
         t = ''.join('|{}|\n'.format(''.join(' X@'[c] for c in r)) for r in game.board)
-        divider = '+' + (game.board.shape[1]-2)*'=' + '+\n'
+        divider = '+' + game.board.shape[1]*'=' + '+\n'
         return divider + t + divider
 
 def main(width=5, height=5):

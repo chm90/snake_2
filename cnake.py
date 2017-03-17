@@ -4,7 +4,7 @@ import snake
 from snake import GameOver
 
 class game(snake.game):
-    apples = 10
+    apples = 100
 
     def next(g, a):
         a = np.argmax([dv.dot(a)/a.dot(a)/dv.dot(dv)
