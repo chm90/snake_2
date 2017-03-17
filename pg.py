@@ -209,8 +209,6 @@ def main(args=sys.argv[1:], alpha=0.0, action_sigma=1e-2, num_batch=200,
         if i < num_batch or (i % replay_period) != 0:
             continue
 
-        print('Begin minibatch', end='... ', flush=True, file=sys.stderr)
-
         # Sample a minibatch
         jmax = min(i, num_replay)
         mb_idxs = np.random.choice(jmax, p=replay_p[:jmax]/replay_p[:jmax].sum(),
@@ -238,8 +236,6 @@ def main(args=sys.argv[1:], alpha=0.0, action_sigma=1e-2, num_batch=200,
         # Finally learn. First optimize critic, then optimize actor_q.
         L  = critic.train_on_batch([mb_phi, mb_a], mb_y)
         L += actor_q.train_on_batch(mb_phi, np.zeros(mb_y.shape))
-
-        print('done', file=sys.stderr)
 
         # Soft update target networks.
         # NOTE Disabled in favor of copying the networks below.
