@@ -15,12 +15,12 @@ input_dim = W*H
 phi_states = 3
 
 # Dense layer sizes
-layer_sizes = [128]*3 + [len(snake.dirs)]
+layer_sizes = [256]*3 + [len(snake.dirs)]
 
 layer_input = layers.Input(shape=(phi_states, input_dim))
 layer = layers.Flatten()(layer_input)
 for size in layer_sizes[:-1]:
-    layer = layers.Dense(size, activation='relu',
+    layer = layers.Dense(size, activation='elu',
                          activity_regularizer=regularizers.activity_l2(1e-6)
                          )(layer)
 
@@ -31,7 +31,7 @@ layer = layers.Dense(layer_sizes[-1], activation='linear',
 model = models.Model(input=layer_input, output=layer)
 
 loss = 'mean_squared_error'
-optimizer = optimizers.Adadelta(lr=0.8)
+optimizer = optimizers.Adam()
 
 def state(g):
     w, h = g.board.shape
@@ -40,7 +40,7 @@ def state(g):
     #s[:segs.size] = segs
     #if np.any(g.board == snake.apple_i):
     #    s[-1] = (1.0 + g.random_cell(item=snake.apple).dot((1, w))) #/ float(w*h)
-    return g.board.reshape(w*h)
+    return g.board.reshape(w*h).copy()
 
 def init(args):
     h5_fn, = args
