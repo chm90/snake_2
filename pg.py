@@ -106,7 +106,7 @@ def init(args):
     return (actor, critic)
 
 def state(g):
-    return np.random.rand(H, W, L)
+    return np.repeat(g.board[:, :, None], L, axis=-1)
 
 def phi(phi, g):
     s = state(g)
