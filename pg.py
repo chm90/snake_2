@@ -23,7 +23,7 @@ h0 = layers.MaxPooling2D(pool_size=(2, 2), padding='same')(
      layers.Activation('elu')(
      layers.BatchNormalization()(
      layers.Reshape((W-2, H-2, 48))(
-     convolutional.Conv3D(48, T, 3, 3, padding='valid')(in_state)))))
+     convolutional.Conv3D(48, (T, 3, 3), padding='valid')(in_state)))))
 
 # More of the same, we have bigly inputs! YUGE! Dropout is nice I hear at 25%.
 # Output size is now 30x30x48.
@@ -31,7 +31,7 @@ h1 = layers.Dropout(0.25)(
      layers.MaxPooling2D(pool_size=(2, 2), padding='same')(
      layers.Activation('elu')(
      layers.BatchNormalization()(
-     convolutional.Conv2D(48, 3, 3, padding='valid')(h0)))))
+     convolutional.Conv2D(48, (3, 3), padding='valid')(h0)))))
 
 # Our 30x30x48 input is now convolved with 64 kernels of size 3x3, giving us
 # 30x30x64. Batch normalize, relu. Do it again with 64 more kernels. Max
@@ -40,10 +40,10 @@ h2 = layers.Dropout(0.25)(
      layers.MaxPooling2D(pool_size=(2, 2), padding='same')(
      layers.Activation('elu')(
      layers.BatchNormalization()(
-     convolutional.Conv2D(64, 3, 3, padding='same')(
+     convolutional.Conv2D(64, (3, 3), padding='same')(
      layers.Activation('elu')(
      layers.BatchNormalization()(
-     convolutional.Conv2D(64, 3, 3, padding='same')(h1))))))))
+     convolutional.Conv2D(64, (3, 3), padding='same')(h1))))))))
 
 # Our state is now 15x15x64, or 14 400 dimensions. Hot damn.
 state_out = layers.Flatten()(h2)
