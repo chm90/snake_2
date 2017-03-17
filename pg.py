@@ -30,7 +30,7 @@ h0 = layers.MaxPooling2D(pool_size=(2, 2), padding='same')(
 h1 = layers.MaxPooling2D(pool_size=(2, 2), padding='same')(
      layers.Activation('elu')(
      layers.BatchNormalization()(
-     convolutional.Conv2D(48, (3, 3), padding='valid')(h0)))))
+     convolutional.Conv2D(48, (3, 3), padding='valid')(h0))))
 
 # Our 30x30x48 input is now convolved with 64 kernels of size 3x3, giving us
 # 30x30x64. Batch normalize, relu. Do it again with 64 more kernels. Max
@@ -41,7 +41,7 @@ h2 = layers.MaxPooling2D(pool_size=(2, 2), padding='same')(
      convolutional.Conv2D(64, (3, 3), padding='same')(
      layers.Activation('elu')(
      layers.BatchNormalization()(
-     convolutional.Conv2D(64, (3, 3), padding='same')(h1))))))))
+     convolutional.Conv2D(64, (3, 3), padding='same')(h1)))))))
 
 # Our state is now 15x15x64, or 14 400 dimensions. Hot damn.
 state_out = layers.Flatten()(h2)
@@ -122,7 +122,7 @@ def copy_model(model):
 
 def soft_update(dst, src, tau=1e-3):
     dst.set_weights([tau*w_src + (1.0 - tau)*w_dst
-                    for w_src, w_dst in zip(src.get_weights(), dst.get_weights())]
+                    for w_src, w_dst in zip(src.get_weights(), dst.get_weights())])
 
 def main(args=sys.argv[1:], alpha=0.0, action_sigma=1e-2, num_batch=200,
          num_copy_target=400, num_iter=int(2e6), num_replay=int(1e4),
