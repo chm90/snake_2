@@ -102,7 +102,7 @@ def init(args):
     h5_fn, = args
     actor_h5_fn, critic_h5_fn = args
     actor.load_weights(actor_h5_fn)
-    critic.load_weights(critic_q_h5_fn)
+    critic.load_weights(critic_h5_fn)
     return (actor, critic)
 
 def state(g):
@@ -136,7 +136,7 @@ def main(args=sys.argv[1:], alpha=0.0, action_sigma=1e-2, num_batch=200,
     print('Loading weights', end='... ', flush=True, file=sys.stderr)
     try:
         actor.load_weights(actor_h5_fn)
-        critic.load_weights(critic_q_h5_fn)
+        critic.load_weights(critic_h5_fn)
     except IOError as e:
         print(e, file=sys.stderr)
     else:
@@ -249,14 +249,14 @@ def main(args=sys.argv[1:], alpha=0.0, action_sigma=1e-2, num_batch=200,
         if (i % num_copy_target) == 0:
             actor_target.set_weights(actor.get_weights())
             critic_target.set_weights(critic.get_weights())
-            print(' -- Saving DQN --')
+            print(' -- Saving DDPG networks --')
             print('        Average R:', Rtot/num_copy_target)
             print('       High score:', high_score)
             print('    Training loss:', L)
             print(' Minibatch mean Q:', np.r_[mb_q].mean(axis=0))
             print(' Minibatch mean y:', mb_y.mean(axis=0))
             actor.save(actor_h5_fn)
-            critic.save(critic_q_h5_fn)
+            critic.save(critic_h5_fn)
             Rtot = 0
 
     model.save(h5_fn)
