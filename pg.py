@@ -244,6 +244,7 @@ def main(args=sys.argv[1:], alpha=0.0, action_sigma=1e-2, num_batch=200,
 
         if (i % num_copy_target) == 0:
             print(' -- Saving DDPG networks --')
+            print('         Iteration:', i)
             print('         Average R:', Rtot/num_copy_target)
             print('        High score:', high_score)
             print(' Actor/critic loss:', La, Lc)
