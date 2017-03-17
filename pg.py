@@ -97,7 +97,6 @@ actor_q.compile(optimizer='adam', loss=lambda y, yp: -yp)
 print('done', file=sys.stderr)
 
 def init(args):
-    h5_fn, = args
     actor_h5_fn, critic_h5_fn = args
     actor.load_weights(actor_h5_fn)
     critic.load_weights(critic_h5_fn)

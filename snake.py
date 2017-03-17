@@ -20,6 +20,7 @@ class Win(GameOver): pass
 class game(object):
     apple_extension = 1
     segment_score = 5
+    apples = 1
 
     def __init__(game, board, position, extensions=2):
         game.board = board.astype(np.uint8)
@@ -27,12 +28,12 @@ class game(object):
         game.segments = [game.position]
         game.extensions = extensions
         game.current_cell = snake_segment
-        if not np.any(game.board == apple_i):
+        for i in range(game.apples):
             game.put_apple()
 
     @classmethod
-    def from_size(cls, width, height):
-        return cls(np.zeros((width, height)), (width//2, height//2))
+    def from_size(cls, width, height, **kw):
+        return cls(np.zeros((width, height)), (width//2, height//2), **kw)
 
     def is_in_bounds(game, x, y):
         height, width = game.board.shape
@@ -98,6 +99,11 @@ class game(object):
         else:
             x, y = game.segments.pop(0)
             game.set_cell(x, y, empty)
+
+    def __str__(game):
+        t = ''.join('|{}|\n'.format(''.join(' X@'[c] for c in r)) for r in game.board)
+        divider = '+' + (game.board.shape[1]-2)*'=' + '+\n'
+        return divider + t + divider
 
 def main(width=5, height=5):
     g = game.from_size(width, height)
