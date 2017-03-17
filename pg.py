@@ -25,28 +25,28 @@ h0 = layers.MaxPooling2D(pool_size=(2, 2), border_mode='same')(
      layers.Reshape((W-2, H-2, 48))(
      convolutional.Convolution3D(48, T, 3, 3, border_mode='valid')(in_state)))))
 
-## More of the same, we have bigly inputs! YUGE! Dropout is nice I hear at 25%.
-## Output size is now 30x30x48.
-#h1 = layers.Dropout(0.25)(
-#     layers.MaxPooling2D(pool_size=(2, 2), border_mode='same')(
-#     layers.Activation('elu')(
-#     layers.BatchNormalization()(
-#     convolutional.Convolution2D(48, 3, 3, border_mode='valid')(h0)))))
+# More of the same, we have bigly inputs! YUGE! Dropout is nice I hear at 25%.
+# Output size is now 30x30x48.
+h1 = layers.Dropout(0.25)(
+     layers.MaxPooling2D(pool_size=(2, 2), border_mode='same')(
+     layers.Activation('elu')(
+     layers.BatchNormalization()(
+     convolutional.Convolution2D(48, 3, 3, border_mode='valid')(h0)))))
 
 # Our 30x30x48 input is now convolved with 64 kernels of size 3x3, giving us
 # 30x30x64. Batch normalize, relu. Do it again with 64 more kernels. Max
 # pool with 2x2 stride, finally 15x15x64. Dropout at 25%.
-h1 = layers.Dropout(0.25)(
+h2 = layers.Dropout(0.25)(
      layers.MaxPooling2D(pool_size=(2, 2), border_mode='same')(
      layers.Activation('elu')(
      layers.BatchNormalization()(
      convolutional.Convolution2D(64, 3, 3, border_mode='same')(
      layers.Activation('elu')(
      layers.BatchNormalization()(
-     convolutional.Convolution2D(64, 3, 3, border_mode='same')(h0))))))))
+     convolutional.Convolution2D(64, 3, 3, border_mode='same')(h1))))))))
 
 # Our state is now 15x15x64, or 14 400 dimensions. Hot damn.
-state_out = layers.Flatten()(h1)
+state_out = layers.Flatten()(h2)
 
 actor_action_layer = \
     layers.Dense(action_dim, name='actor_a')(
