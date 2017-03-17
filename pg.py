@@ -52,16 +52,16 @@ actor_action_layer = \
     layers.Dense(action_dim, name='actor_a')(
     layers.Dense(128, activation='relu', name='actor_h1')(
     layers.BatchNormalization(name='actor_bn0')(
-    layers.Dense(32, activation='relu', name='actor_h0')(state_out))))
+    layers.Dense(64, activation='relu', name='actor_h0')(state_out))))
 
 q_layers = [
-    layers.Dense(128, activation='relu', name='critic_h0'),
+    layers.Dense(64, activation='relu', name='critic_h0'),
     layers.BatchNormalization(name='critic_bn0'),
-    layers.Dense(32, activation='relu', name='critic_h1'),
+    layers.Dense(64, activation='relu', name='critic_h1'),
     layers.Dense(1, name='critic_q')]
 
 def wrap_q_layers(in_action):
-    in_merge = layers.merge([state_out, in_action], mode='concat')
+    in_merge = layers.Concatenate()([state_out, in_action])
     return reduce(lambda result, layer: layer(result), q_layers, in_merge)
 
 in_action = layers.Input((action_dim,))
@@ -71,11 +71,11 @@ print('done', file=sys.stderr)
 print('Compiling models', end='... ', flush=True, file=sys.stderr)
 
 # Plain actor model
-actor = models.Model(input=in_state, output=actor_action_layer)
+actor = models.Model(inputs=in_state, outputs=actor_action_layer)
 actor.compile(optimizer='adam', loss='mean_squared_error')
 
 # Plain critic model
-critic = models.Model(input=[in_state, in_action], output=wrap_q_layers(in_action))
+critic = models.Model(inputs=[in_state, in_action], outputs=wrap_q_layers(in_action))
 critic.compile(optimizer='adam', loss='mean_squared_error')
 
 # actor_q is a special model where the loss function is simply -y_pred,
@@ -88,7 +88,7 @@ critic.compile(optimizer='adam', loss='mean_squared_error')
 # optimizing the actor network we make use of the critic. Therefore we "freeze"
 # the layers belonging to the critic.
 
-actor_q = models.Model(input=in_state, output=wrap_q_layers(actor_action_layer))
+actor_q = models.Model(inputs=in_state, outputs=wrap_q_layers(actor_action_layer))
 
 for layer in actor_q.layers:
     if hasattr(layer, 'trainable') and layer not in critic.layers:

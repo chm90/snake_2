@@ -21,11 +21,11 @@ layer_input = layers.Input(shape=(phi_states, input_dim))
 layer = layers.Flatten()(layer_input)
 for size in layer_sizes[:-1]:
     layer = layers.Dense(size, activation='elu',
-                         activity_regularizer=regularizers.activity_l2(1e-6)
+                         activity_regularizer=regularizers.l2(1e-6)
                          )(layer)
 
 layer = layers.Dense(layer_sizes[-1], activation='linear',
-                     activity_regularizer=regularizers.activity_l2(1e-6)
+                     activity_regularizer=regularizers.l2(1e-6)
                      )(layer)
 
 model = models.Model(input=layer_input, output=layer)
