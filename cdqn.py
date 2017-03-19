@@ -11,7 +11,7 @@ input_shape = H,W,T*L
 phi_states = T
 action_dim = 4
 action_repeat = T
-epsilon = 15e-2
+epsilon = 5e-2
 
 print('Constructing & compiling models', end='... ', flush=True, file=sys.stderr)
 
