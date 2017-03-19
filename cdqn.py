@@ -1,6 +1,6 @@
 import os
 import sys
-from keras import layers, models, regularizers, initializers
+from keras import layers, models, regularizers, initializers, optimizers
 from keras.layers import convolutional
 import numpy as np
 import snake
@@ -44,7 +44,7 @@ h_layers = \
     layers.Flatten()(c1))))
 
 model = models.Model(inputs=in_state, outputs=h_layers)
-model.compile(optimizer='rmsprop', loss='mean_squared_error')
+model.compile(optimizer=optimizers.Adam(lr=1e-5), loss='mean_squared_error')
 
 print('done', file=sys.stderr)
 
@@ -62,11 +62,11 @@ def init(args):
 def next_phi(phi, g):
     s = state(g)
     if phi is None:
-        return np.repeat(s, T, axis=-1)
+        phi = np.repeat(s, T, axis=-1)
     else:
         phi[:, :, :-L] = phi[:, :, L:]
         phi[:, :, -L:] = s
-        return phi[-phi_states:]
+    return phi
 
 def q(phi, model):
     return model.predict(np.array([phi]))[0, :]
@@ -91,7 +91,7 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=50,
 
     target.set_weights(model.get_weights())
 
-    # A replay tuple is (a, r, terminal, phi, phi_).
+    # A replay tuple is (a, r, terminal, phi, phi_) with importance weight p.
     replay_a = -np.ones(num_replay, dtype=np.int8)
     replay_r = np.zeros(num_replay)
     replay_p = np.ones(num_replay)
@@ -99,15 +99,16 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=50,
     replay_phi  = np.zeros((num_replay,) + input_shape)
     replay_phi_ = np.zeros((num_replay,) + input_shape)
 
-    g, replay_i, Rtot, high_score = None, 0, 0, 0
+    g, replay_i, Rtot, high_score, num_games = None, 0, 0, 0, 0
 
     for i in range(num_iter):
 
         if g is None or g.is_over:
             g = snake.game.from_size(W, H)
+            num_games += 1
             t, t_last_reward = 0, 0
             phi_ = next_phi(None, g)
-            phi = list(phi_)
+            phi = phi_.copy()
 
         phi[:] = phi_
         score = g.score
@@ -147,8 +148,8 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=50,
         replay_r[replay_i] = r
         replay_p[replay_i] = replay_p.max()
         replay_terminal[replay_i] = g is None or g.is_over
-        replay_phi[replay_i, :, :] = phi
-        replay_phi_[replay_i, :, :] = phi_
+        replay_phi[replay_i] = phi
+        replay_phi_[replay_i] = phi_
 
         # Don't do learning until we have at least some experience, and only
         # each replay_period'th iteration.
@@ -185,14 +186,17 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=50,
 
         if (i % num_copy_target) == 0:
             target.set_weights(model.get_weights())
-            print(' -- Saving DQN --')
-            print('        Average R:', Rtot/num_copy_target)
-            print('       High score:', high_score)
-            print('    Training loss:', L)
-            print(' Minibatch mean Q:', np.r_[mb_q].mean(axis=0))
-            print(' Minibatch mean y:', mb_y.mean(axis=0))
+            print((' -- Saving DQN --\n'
+                   '        Average R: {rpg:.3g} in {num_games} games\n'
+                   '       High score: {high_score}\n'
+                   '    Training loss: {L}\n'
+                   ' Minibatch mean Q: {mean_Q}\n'
+                   ' Minibatch mean y: {mean_y}\n').format(
+                  rpg=Rtot/num_games,
+                  mean_Q= np.r_[mb_q].mean(axis=0),
+                  mean_y=mb_y.mean(axis=0), **locals()))
             model.save(h5_fn)
-            Rtot = 0
+            Rtot, num_games = 0, 0
 
     model.save(h5_fn)
 
