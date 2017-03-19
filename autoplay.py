@@ -3,14 +3,12 @@ import time
 import numpy as np
 import snake
 
-W, H = 5, 5
-
 def play(mod, *args):
-    phi, g = None, snake.game.from_size(W, H)
+    phi, g = None, snake.game.from_size(mod.W, mod.H)
     while not g.is_over:
-        print(g.board)
+        print(g)
         time.sleep(0.1)
-        phi = mod.phi(phi, g)
+        phi = mod.next_phi(phi, g)
         q = mod.q(phi, *args)
         a = sample_softmax(q)
         try:

@@ -48,7 +48,7 @@ def init(args):
     model.load_weights(h5_fn)
     return (model,)
 
-def phi(phi, g):
+def next_phi(phi, g):
     s = state(g)
     if phi is None:
         return [s]*phi_states

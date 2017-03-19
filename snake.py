@@ -20,15 +20,14 @@ class Win(GameOver): pass
 class game(object):
     apple_extension = 1
     segment_score = 5
-    apples = 1
 
-    def __init__(game, board, position, extensions=2):
+    def __init__(game, board, position, extensions=2, apples=1):
         game.board = board.astype(np.uint8)
         game.position = np.r_[position]
         game.segments = [game.position]
         game.extensions = extensions
         game.current_cell = snake_segment
-        for i in range(game.apples):
+        for i in range(apples):
             game.put_apple()
 
     @classmethod

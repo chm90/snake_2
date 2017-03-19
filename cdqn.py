@@ -104,7 +104,7 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=50,
     for i in range(num_iter):
 
         if g is None or g.is_over:
-            g = snake.game.from_size(W, H)
+            g = snake.game.from_size(W, H, apples=int(np.sqrt(W*H)))
             num_games += 1
             t, t_last_reward = 0, 0
             phi_ = next_phi(None, g)
