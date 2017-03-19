@@ -105,12 +105,12 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=50,
 
     g, replay_i, Rtot, high_score, num_games = None, 0, 0, 0, 0
 
-    for i in range(num_iter):
+    for t in range(num_iter):
 
         if g is None or g.is_over:
             g = snake.game.from_size(W, H, apples=int(np.sqrt(W*H)))
             num_games += 1
-            t, t_last_reward = 0, 0
+            t_start, t_last_reward = t, t
             phi_ = next_phi(None, g)
             phi = phi_.copy()
 
@@ -157,11 +157,11 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=50,
 
         # Don't do learning until we have at least some experience, and only
         # each replay_period'th iteration.
-        if i < num_batch or (i % replay_period) != 0:
+        if t < num_batch or (t % replay_period) != 0:
             continue
 
         # Sample a minibatch
-        jmax = min(i, num_replay)
+        jmax = min(t, num_replay)
         mb_idxs = np.random.choice(jmax, p=replay_p[:jmax]/replay_p[:jmax].sum(),
                                    size=num_batch, replace=False)
         mb_phi  = replay_phi[mb_idxs, :, :]
@@ -191,7 +191,7 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=50,
         # Soft update target networks.
         soft_update(dst=target, src=model)
 
-        if (i % num_copy_target) == 0:
+        if (t % num_copy_target) == 0:
             print((' -- Saving DQN (#{t}) --\n'
                    '        Average R: {rpg:.3g} in {num_games} games\n'
                    '       High score: {high_score}\n'
