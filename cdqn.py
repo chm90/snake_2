@@ -71,6 +71,10 @@ def next_phi(phi, g):
 def q(phi, model):
     return model.predict(np.array([phi]))[0, :]
 
+def soft_update(dst, src, tau=1e-3):
+    dst.set_weights([tau*w_src + (1.0 - tau)*w_dst
+                    for w_src, w_dst in zip(src.get_weights(), dst.get_weights())])
+
 def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=50,
          num_copy_target=2000, num_iter=int(2e6), num_replay=int(1e5),
          replay_period=4, gamma=0.5, t_last_reward_max=25):
@@ -184,9 +188,11 @@ def main(args=sys.argv[1:], alpha=0.7, epsilon=5e-2, num_batch=50,
         # Finally learn
         L = model.train_on_batch(replay_phi[mb_idxs, :, :], mb_y)
 
+        # Soft update target networks.
+        soft_update(dst=target, src=model)
+
         if (i % num_copy_target) == 0:
-            target.set_weights(model.get_weights())
-            print((' -- Saving DQN --\n'
+            print((' -- Saving DQN (#{t}) --\n'
                    '        Average R: {rpg:.3g} in {num_games} games\n'
                    '       High score: {high_score}\n'
                    '    Training loss: {L}\n'
