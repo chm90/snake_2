@@ -66,7 +66,7 @@ def explore(Q, high_score=None):
         r = float(-10 if g.is_over else g.score - score)
         yield r, (a,) + s, (wholeaxis,) + s_
 
-def learn_Q(t_max=1000):
+def learn_Q(t_max=1000, output='Q', save_interval=1000):
     Q = np.zeros((N,) + (M,)*len(idxs))
     Rtot, Rmax = 0, 0
     for i in range(200000):
@@ -87,9 +87,9 @@ def learn_Q(t_max=1000):
             Rmax = R
             print('New high score:', Rmax)
             #print(np.r_[s].reshape((3,3)))
-        if (i % 1000) == 0:
+        if (i % save_interval) == 0:
             print(r'Saving Q, \avg R =', Rtot/1000.)
-            np.save('Q', Q)
+            np.save(output, Q)
             Rtot = 0
     return Q
 
@@ -105,5 +105,5 @@ def phi(phi, g):
     return state(g)
 
 if __name__ == '__main__':
-    Q = learn_Q()
-    np.save('Q', Q)
+    arg = sys.argv[1] if len(sys.argv) > 1 else 'Q'
+    Q = learn_Q(output=arg)
