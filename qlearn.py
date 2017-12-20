@@ -66,10 +66,10 @@ def explore(Q, high_score=None):
         r = float(-10 if g.is_over else g.score - score)
         yield r, (a,) + s, (wholeaxis,) + s_
 
-def learn_Q(t_max=1000, output='Q', save_interval=1000):
+def learn_Q(qlimit=200000, t_max=1000, output='Q', save_interval=1000):
     Q = np.zeros((N,) + (M,)*len(idxs))
     Rtot, Rmax = 0, 0
-    for i in range(200000):
+    for i in range(qlimit):
         #episode = list(explore(Q))
         #R = sum(r for r, sa, s_a in episode)
         #for t, (r, sa, s_a) in enumerate(episode):
