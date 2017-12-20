@@ -89,7 +89,7 @@ def learn_Q(qlimit=200000, t_max=1000, output='Q', save_interval=1000):
             #print(np.r_[s].reshape((3,3)))
         if (i % save_interval) == 0:
             print(r'Saving Q, \avg R =', Rtot/1000.)
-            np.save(output, Q)
+            save(output, Q)
             Rtot = 0
     return Q
 
@@ -101,9 +101,19 @@ def load(args):
     print('num empty Q:', 100.*np.count_nonzero(Q == 0.0)/Q.size, '%')
     return (Q,)
 
+def save(file, data):
+    try:
+        file.seek(0)
+    except:
+        pass
+    np.save(file, data)
+
+
 def phi(phi, g):
     return state(g)
 
 if __name__ == '__main__':
     arg = sys.argv[1] if len(sys.argv) > 1 else 'Q'
-    Q = learn_Q(output=arg)
+    with open(arg, 'wb') as f:
+        Q = learn_Q(output=f,qlimit=2000)
+        save(f, Q)
