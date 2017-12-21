@@ -10,6 +10,7 @@ dir_vectors = [np.r_[ 0, -1],
 board_items = 'empty snake_segment apple wall'.split()
 empty, snake_segment, apple, wall = board_items
 empty_i, snake_segment_i, apple_i, wall_i = range(len(board_items))
+idxs = [(dx, dy) for dy in (-1, 0, +1) for dx in (-1, 0, +1)]
 
 class GameOver(Exception): pass
 class Loss(GameOver): pass
@@ -44,6 +45,19 @@ class game(object):
 
     def set_cell(game, x, y, item):
         game.board[y, x] = board_items.index(item)
+
+    def state(game):
+        g = game
+        x, y = g.position
+        s = np.r_[[g.board[py, px] if g.is_in_bounds(px, py) else wall_i
+                for px, py in g.position + idxs]]
+        if np.any(g.board == apple_i):
+            dp = g.random_cell(item=apple) - g.position
+            dp = np.fmin(+1, np.fmax(-1, dp))
+            apple_idx = idxs.index(tuple(dp))
+            if s[apple_idx] == empty_i:
+                s[apple_idx] = apple_i
+        return tuple(s)
 
     @property
     def current_cell(game):
