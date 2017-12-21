@@ -34,7 +34,8 @@ def replay(seed, actions):
     print("score: " + str(g.score) + " actions: " + str(len(actions)))
 
 
-def test_qlearn(n=10):
+def test_qlearn(npy,n=10):
+    Q = np.load(npy)
     best = None
     for i in range(0, n):
         seed = np.random.randint(0, 2**31)
@@ -65,9 +66,35 @@ def test_qlearn(n=10):
 
     return best
 
+def test_qlearn_gym(npy, n=10):
+    import snake_gym as gym
+    Q = np.load(npy)
+    best = None
+    for i in range(0, n):
+        env = gym.make('Snake-v0')
+        s, _, done, _ = env.reset()
+        g = env.game
+        actions = []
+        t = 0
+        while not done and t < 10000:
+            q_s = Q[(wholeaxis,) + tuple(s)]
+            score = g.score
+            if np.random.random() < epsilon and np.any(q_s != 0):
+                a = q_s.argmax()
+            else:
+                a = np.random.choice(N)
+
+            s, r, done, _ = env.step(a)
+            actions.append(a)
+            t += 1
+
+        if best is None or g.score > best[0].score:
+            best = (g, actions)
+
+    return best
+
 if __name__ == '__main__':
     arg = sys.argv[1] if len(sys.argv) > 1 else 'Q.npy'
-    Q = np.load(arg)
-    game, actions = test_qlearn(1)
+    game, actions = test_qlearn_gym(arg, 1)
     replay(game.seed, actions)
 
