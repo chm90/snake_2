@@ -46,7 +46,7 @@ class Env(object):
         start_pos = (self.shape[0]//2, self.shape[1]//2)
         self.game = snake.game(np.zeros(self.shape), start_pos, seed=self.seed_)
 
-        return (self.game.state(), 0, False, None)
+        return (self.game.board, 0, False, None)
 
     def render(self, mode='human', close=False):
         raise NotImplementedError
