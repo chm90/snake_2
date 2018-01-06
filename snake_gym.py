@@ -1,32 +1,36 @@
 import numpy as np
 import snake
+
+from gym.spaces import Box, Discrete
 #
 # Provide a openai gym-like interface for our snake environment
 #
 
-class Discrete(object):
-    def __init__(self, n):
-        self.n = n
-        self.rng = np.random.RandomState()
-    def sample(self):
-        return self.rng.randint(self.n)
-    def contains(self, x):
-        try:
-            x = int(x)
-        except:
-            return False
-        return x >= 0 and x < self.n
-
-    def shape(self):
-        return (self.n,)
+#class Discrete(object):
+#    def __init__(self, n):
+#        self.n = n
+#        self.rng = np.random.RandomState()
+#    def sample(self):
+#        return self.rng.randint(self.n)
+#    def contains(self, x):
+#        try:
+#            x = int(x)
+#        except:
+#            return False
+#        return x >= 0 and x < self.n
+#
+#    def shape(self):
+#        return (self.n,)
 
 # Env-related abstractions
 class Env(object):
-    def __init__(self, shape, action_space, seed=None):
+    def __init__(self, action_space, observation_space, seed=None):
         self.seed_ = seed
-        self.shape = shape
+        print("observation_space =",observation_space)
+        self.shape = observation_space.shape
         self.action_space = action_space
         self.seed(seed)
+        self.observation_space = observation_space
 
     def step(self, action):
         score = self.game.score
@@ -40,13 +44,20 @@ class Env(object):
         reward = float(-10 if self.game.is_over else new_score - score)
 
         # (observation, reward, terminal, info) in accordance with gym api
-        return (self.game.state(), reward, self.game.is_over, info)
+        return (self.board, reward, self.game.is_over, info)
+
+    @property
+    def board(self):
+        return self.game.board.reshape(self.shape)
 
     def reset(self):
+        print("------------------------------------------")
+        print("self.shape =",self.shape)
+        print("------------------------------------------")
+        
         start_pos = (self.shape[0]//2, self.shape[1]//2)
-        self.game = snake.game(np.zeros(self.shape), start_pos, seed=self.seed_)
-
-        return (self.game.board, 0, False, None)
+        self.game = snake.game(np.zeros(self.shape[:2]), start_pos, seed=self.seed_)
+        return (self.board, 0, False, None)
 
     def render(self, mode='human', close=False):
         raise NotImplementedError
@@ -63,12 +74,12 @@ class Env(object):
 def make(env='Snake-v0', shape=(5,5), num_actions=4, seed=None):
     if not seed:
         seed = np.random.randint(0, 2**31)
-    return Env(shape, Discrete(num_actions), seed=seed)
+    return Env(Discrete(num_actions),Box(low=0,high=3,shape=shape + (1,)))
 
 if __name__ == '__main__':
     import time
     # random snake test
-    env = make(shape=(10,10))
+    env = make(shape=(128,128))
     obs, reward, done, info = env.reset()
     while not done:
         print(env.game)
