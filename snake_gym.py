@@ -1,7 +1,8 @@
 import numpy as np
 import snake
-
+from gym import Env
 from gym.spaces import Box, Discrete
+from gym import utils
 #
 # Provide a openai gym-like interface for our snake environment
 #
@@ -23,7 +24,7 @@ from gym.spaces import Box, Discrete
 #        return (self.n,)
 
 # Env-related abstractions
-class Env(object):
+class SnakeEnv(Env,utils.EzPickle):
     def __init__(self, action_space, observation_space, seed=None):
         self.seed_ = seed
         print("observation_space =",observation_space)
@@ -33,6 +34,7 @@ class Env(object):
         self.observation_space = observation_space
 
     def step(self, action):
+        print("step")
         score = self.game.score
         info = {}
         try:
@@ -51,13 +53,11 @@ class Env(object):
         return self.game.board.reshape(self.shape)
 
     def reset(self):
-        print("------------------------------------------")
-        print("self.shape =",self.shape)
-        print("------------------------------------------")
-        
+        print("resetting")
         start_pos = (self.shape[0]//2, self.shape[1]//2)
         self.game = snake.game(np.zeros(self.shape[:2]), start_pos, seed=self.seed_)
-        return (self.board, 0, False, None)
+        #return (self.board, 0, False, None)
+        return self.board
 
     def render(self, mode='human', close=False):
         raise NotImplementedError
@@ -71,10 +71,13 @@ class Env(object):
         return self.seed_
 
 
-def make(env='Snake-v0', shape=(5,5), num_actions=4, seed=None):
-    if not seed:
-        seed = np.random.randint(0, 2**31)
-    return Env(Discrete(num_actions),Box(low=0,high=3,shape=shape + (1,)))
+def make_snake(env='Snake-v0', shape=(5,5), num_actions=4, seed=None):
+    if env == "Snake-v0":
+        if not seed:
+            seed = np.random.randint(0, 2**31)
+        return SnakeEnv(Discrete(num_actions),Box(low=0,high=3,shape=shape + (1,)))
+    else:
+        raise Exception("Invalid env {$0}".format(env))
 
 if __name__ == '__main__':
     import time
