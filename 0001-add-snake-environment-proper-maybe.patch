@@ -1,0 +1,225 @@
+From 1fb3a657a5ffdc8414f0a9821738f83103ccc323 Mon Sep 17 00:00:00 2001
+From: csi <carlsi@kth.se>
+Date: Sun, 7 Jan 2018 22:20:42 +0100
+Subject: [PATCH 1/1] add snake environment proper (maybe)
+
+---
+ gym/envs/__init__.py         |   4 ++
+ gym/envs/id2223/__init__.py  |   1 +
+ gym/envs/id2223/snake.py     | 120 +++++++++++++++++++++++++++++++++++++++++++
+ gym/envs/id2223/snake_env.py |  56 ++++++++++++++++++++
+ 4 files changed, 181 insertions(+)
+ create mode 100644 gym/envs/id2223/__init__.py
+ create mode 100644 gym/envs/id2223/snake.py
+ create mode 100644 gym/envs/id2223/snake_env.py
+
+diff --git a/gym/envs/__init__.py b/gym/envs/__init__.py
+index db01544..c8c46a8 100644
+--- a/gym/envs/__init__.py
++++ b/gym/envs/__init__.py
+@@ -507,3 +507,7 @@ register(
+     entry_point='gym.envs.safety:OffSwitchCartpoleProbEnv',
+     max_episode_steps=200,
+ )
++register(
++    id='Snake-v0',
++    entry_point='gym.envs.id2223:SnakeEnv',
++)
+diff --git a/gym/envs/id2223/__init__.py b/gym/envs/id2223/__init__.py
+new file mode 100644
+index 0000000..dd18e61
+--- /dev/null
++++ b/gym/envs/id2223/__init__.py
+@@ -0,0 +1 @@
++from gym.envs.id2223.snake_env import SnakeEnv
+diff --git a/gym/envs/id2223/snake.py b/gym/envs/id2223/snake.py
+new file mode 100644
+index 0000000..3196c83
+--- /dev/null
++++ b/gym/envs/id2223/snake.py
+@@ -0,0 +1,120 @@
++import numpy as np
++
++dirs = 'up down left right'.split()
++up, down, left, right = dirs
++up_i, down_i, left_i, right_i = range(len(dirs))
++dir_vectors = [np.r_[ 0, -1],
++               np.r_[ 0, +1],
++               np.r_[-1,  0],
++               np.r_[+1,  0]]
++board_items = 'empty snake_segment apple wall'.split()
++empty, snake_segment, apple, wall = board_items
++empty_i, snake_segment_i, apple_i, wall_i = range(len(board_items))
++idxs = [(dx, dy) for dy in (-1, 0, +1) for dx in (-1, 0, +1)]
++
++class GameOver(Exception): pass
++class Loss(GameOver): pass
++class Win(GameOver): pass
++
++class game(object):
++    apple_extension = 1
++    segment_score = 5
++
++    def __init__(game, board, position, extensions=2, apples=1, seed=None):
++        game.board = board.astype(np.uint8)
++        game.position = np.r_[position]
++        game.segments = [game.position]
++        game.extensions = extensions
++        game.current_cell = snake_segment
++        game.seed = seed
++        if seed:
++            np.random.seed(seed)
++        for i in range(apples):
++            game.put_apple()
++
++    @classmethod
++    def from_size(cls, width, height, **kw):
++        return cls(np.zeros((width, height)), (width//2, height//2), **kw)
++
++    def is_in_bounds(game, x, y):
++        height, width = game.board.shape
++        return x >= 0 and y >= 0 and x < width and y < height
++
++    def cell(game, x, y):
++        return board_items[game.board[y, x]]
++
++    def set_cell(game, x, y, item):
++        game.board[y, x] = board_items.index(item)
++
++    def state(game):
++        g = game
++        x, y = g.position
++        s = np.r_[[g.board[py, px] if g.is_in_bounds(px, py) else wall_i
++                for px, py in g.position + idxs]]
++        if np.any(g.board == apple_i):
++            dp = g.random_cell(item=apple) - g.position
++            dp = np.fmin(+1, np.fmax(-1, dp))
++            apple_idx = idxs.index(tuple(dp))
++            if s[apple_idx] == empty_i:
++                s[apple_idx] = apple_i
++        return tuple(s)
++
++    @property
++    def current_cell(game):
++        x, y = game.position
++        return game.cell(x, y)
++
++    @current_cell.setter
++    def current_cell(game, item):
++        x, y = game.position
++        game.set_cell(x, y, item)
++
++    @property
++    def is_over(game):
++        return not np.allclose(game.segments[-1], game.position) \
++            or not game.is_in_bounds(*game.position)
++
++    @property
++    def score(game):
++        return len(game.segments)*game.segment_score
++
++    def next(game, action):
++        game.position = game.position + dir_vectors[dirs.index(action)]
++        if not game.is_in_bounds(*game.position):
++            raise Loss('outside bounds')
++        elif game.current_cell == snake_segment:
++            raise Loss('ate self')
++        elif game.current_cell == apple:
++            game.move_snake()
++            game.eat_apple()
++        else:
++            game.move_snake()
++
++    def eat_apple(game):
++        game.extensions += game.apple_extension
++        height, width = game.board.shape
++        if np.any(game.board == empty_i):
++            game.put_apple()
++
++    def random_cell(game, item=empty):
++        x, y = np.nonzero(game.board == board_items.index(item))
++        i = np.random.randint(x.shape[0])
++        return np.r_[y[i], x[i]]
++
++    def put_apple(game):
++        x, y = game.random_cell()
++        game.set_cell(x, y, apple)
++
++    def move_snake(game):
++        game.current_cell = snake_segment
++        game.segments.append(game.position)
++        if game.extensions:
++            game.extensions -= 1
++        else:
++            x, y = game.segments.pop(0)
++            game.set_cell(x, y, empty)
++
++    def __str__(game):
++        t = ''.join('|{}|\n'.format(''.join(' X@'[c] for c in r)) for r in game.board)
++        divider = '+' + game.board.shape[1]*'=' + '+\n'
++        return divider + t + divider
+diff --git a/gym/envs/id2223/snake_env.py b/gym/envs/id2223/snake_env.py
+new file mode 100644
+index 0000000..8e38e5d
+--- /dev/null
++++ b/gym/envs/id2223/snake_env.py
+@@ -0,0 +1,56 @@
++import numpy as np
++import gym
++from gym import spaces, utils
++from gym.utils import seeding
++
++from gym.envs.id2223 import snake
++
++NUM_ACTIONS = 4
++
++class SnakeEnv(gym.Env,utils.EzPickle):
++    def __init__(self, shape=(64,64), seed=None, num_apples=3):
++        self.shape = shape + (1,)
++        self.action_space = spaces.Discrete(NUM_ACTIONS)
++        self.observation_space = spaces.Box(low=0,high=3,shape=self.shape)
++        self.num_apples = num_apples
++
++        self.start_pos = (self.shape[0]//2, self.shape[1]//2)
++
++        self._seed(seed)
++
++    @property
++    def board(self):
++        return self.game.board.reshape(self.shape)
++
++    def _step(self, action):
++        assert self.game, "Cannot call env.step() before calling reset()"
++        assert self.action_space.contains(action), "Invalid action given"
++
++        score = self.game.score
++        info = {}
++        try:
++            self.game.next(snake.dirs[action])
++        except snake.GameOver as e:
++            info['gameover!'] = str(*e.args)
++
++        new_score = self.game.score
++        reward = float(-10 if self.game.is_over else new_score - score)
++
++        # (observation, reward, terminal, info) in accordance with gym api
++        return (self.board, reward, self.game.is_over, info)
++
++    def _reset(self):
++        self.game = snake.game(np.zeros(self.shape[:2]),
++                               self.start_pos,
++                               apples=self.num_apples)
++        return self.board
++
++    def _render(self, mode='human', close=False):
++        raise NotImplementedError
++
++    def _close(self):
++        self._reset()
++
++    def _seed(self, seed=None):
++        self.np_random, seed = seeding.np_random(seed)
++        return [seed]
+-- 
+2.7.4
+
