@@ -27,24 +27,29 @@ from gym import utils
 class SnakeEnv(Env,utils.EzPickle):
     def __init__(self, action_space, observation_space, seed=None):
         self.seed_ = seed
-        print("observation_space =",observation_space)
         self.shape = observation_space.shape
         self.action_space = action_space
         self.seed(seed)
         self.observation_space = observation_space
-
+        self.ep_rewards = 0
+        self.ep_steps = 0
     def step(self, action):
-        print("step")
         score = self.game.score
         info = {}
         try:
             self.game.next(snake.dirs[action])
+            self.ep_steps +=1
         except snake.GameOver as e:
             info['gameover!'] = str(*e.args)
 
         new_score = self.game.score
         reward = float(-10 if self.game.is_over else new_score - score)
-
+        self.ep_rewards += reward
+        if self.game.is_over:
+            info["episode"] = {
+                "r":self.ep_rewards,
+                "l":self.ep_steps
+            }
         # (observation, reward, terminal, info) in accordance with gym api
         return (self.board, reward, self.game.is_over, info)
 
@@ -53,10 +58,18 @@ class SnakeEnv(Env,utils.EzPickle):
         return self.game.board.reshape(self.shape)
 
     def reset(self):
-        print("resetting")
+        try:
+            pass
+            #print(self.game.score)
+            #print(self.ep_rewards)
+        except AttributeError:
+            pass
         start_pos = (self.shape[0]//2, self.shape[1]//2)
-        self.game = snake.game(np.zeros(self.shape[:2]), start_pos, seed=self.seed_)
+        self.game = snake.game(np.zeros(self.shape[:2]), start_pos, seed=self.seed_,apples=100)
         #return (self.board, 0, False, None)
+        self.ep_rewards = 0
+        self.ep_steps = 0
+        
         return self.board
 
     def render(self, mode='human', close=False):

@@ -28,14 +28,14 @@ def train(num_timesteps, seed, policy):
 
     def make_env(rank):
         def env_fn():
-            env = make_snake(shape=(128,128))
+            env = make_snake(shape=(40,40))
             env.seed(seed + rank)
             #print("---------------------------------------------------------------")
             #print(obs.shape)
             #print("---------------------------------------------------------------")
             return env
         return env_fn
-    nenvs = 1
+    nenvs = 12
     env = SubprocVecEnv([make_env(i) for i in range(nenvs)])
     set_global_seeds(seed)
     env = VecFrameStack(env, 4) #Potantialy required
