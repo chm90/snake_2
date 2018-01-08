@@ -47,7 +47,7 @@ class SnakeEnv(Env,utils.EzPickle):
         if self.last_action != -1 and oposite_action[action] == self.last_action :
             action = self.last_action
         
-        if self.steps_since_apple >= 25:
+        if self.steps_since_apple >= 25 + self.game.score * 1:
             self.game.position = [-1,-1]
         
         try:
@@ -57,7 +57,7 @@ class SnakeEnv(Env,utils.EzPickle):
         except snake.GameOver as e:
             info['gameover!'] = str(*e.args)
         new_score = self.game.score
-        
+
         if new_score - score > 0:
             self.steps_since_apple = 0
         else:

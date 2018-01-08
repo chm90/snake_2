@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 import sys
 import argparse
-#from baselines import bench, logger
+from baselines import bench, logger
 import tensorflow as tf
 from baselines.a2c.utils import conv, fc, conv_to_fc, batch_to_seq, seq_to_batch, lstm, lnlstm
 from baselines.common.distributions import make_pdtype
 from random import randint
 import numpy as np
 
-def train(num_timesteps, seed, policy):
+def train(num_timesteps, seed, policy,load_path):
     from baselines.common import set_global_seeds
     from baselines.common.atari_wrappers import wrap_deepmind
     from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
@@ -35,12 +35,13 @@ def train(num_timesteps, seed, policy):
         def env_fn():
             env = make_snake(shape=(5,5))
             env.seed(randint(0,1000000000))
+            env = bench.Monitor(env, logger.get_dir())
             #print("---------------------------------------------------------------")
             #print(obs.shape)
             #print("---------------------------------------------------------------")
             return env
         return env_fn
-    nenvs = 12
+    nenvs = 16
     env = SubprocVecEnv([make_env(i) for i in range(nenvs)])
     set_global_seeds(seed)
     env = VecFrameStack(env, 4) #Potantialy required
@@ -50,7 +51,8 @@ def train(num_timesteps, seed, policy):
         ent_coef=.01,
         lr=lambda f : f * 2.5e-4,
         cliprange=lambda f : f * 0.1,
-        total_timesteps=int(num_timesteps * 1.1))
+        total_timesteps=int(num_timesteps * 1.1),
+        load_path=load_path,save_interval=20)
 
 class MyPolicy(object):
 
@@ -64,7 +66,7 @@ class MyPolicy(object):
             #h2 = conv(h, 'c2', nf=64, rf=4, stride=2, init_scale=np.sqrt(2))
             #h3 = conv(h2, 'c3', nf=64, rf=3, stride=1, init_scale=np.sqrt(2))
             h3 = conv_to_fc(tf.cast(X, tf.float32)/255)
-            h4 = fc(h3, 'fc1', nh=128, init_scale=np.sqrt(2))
+            h4 = fc(h3, 'fc1', nh=512, init_scale=np.sqrt(2))
             pi = fc(h4, 'pi', nact, act=lambda x:x, init_scale=0.01)
             vf = fc(h4, 'v', 1, act=lambda x:x)[:,0]
 
@@ -95,10 +97,11 @@ def main():
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
     parser.add_argument('--policy', help='Policy architecture', choices=['cnn', 'lstm', 'lnlstm',"mlp"], default='cnn')
     parser.add_argument('--num-timesteps', type=int, default=int(10e6))
+    parser.add_argument('--load-path',type=str,default=None)
     args = parser.parse_args()
     #logger.configure()
     train(num_timesteps=args.num_timesteps, seed=args.seed,
-        policy=args.policy)
+        policy=args.policy,load_path = args.load_path)
 
 if __name__ == '__main__':
     main()
