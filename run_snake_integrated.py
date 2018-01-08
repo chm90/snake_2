@@ -43,7 +43,7 @@ def train(num_timesteps, seed, policy):
     env = VecFrameStack(env, 4) #Potantialy required
     policy = {'cnn' : CnnPolicy, 'lstm' : LstmPolicy, 'lnlstm' : LnLstmPolicy}[policy]
     ppo2.learn(policy=policy, env=env, nsteps=128, nminibatches=4,
-        lam=0.95, gamma=0.99, noptepochs=4, log_interval=1,
+        lam=0.95, gamma=0.99, noptepochs=4, log_interval=10,
         save_interval=int(10000),
         ent_coef=.01,
         lr=lambda f : f * 2.5e-4,

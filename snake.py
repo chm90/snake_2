@@ -26,6 +26,7 @@ class game(object):
         game.segments = [game.position]
         game.extensions = extensions
         game.current_cell = snake_segment
+        game.last_action = None
         for i in range(apples):
             game.put_apple()
 
@@ -76,6 +77,16 @@ class game(object):
         return len(game.segments)*game.segment_score
 
     def next(game, action):
+        l = game.last_action
+        a = dirs.index(action)
+        is_180 = l is not None and l ^ a and (
+                 (l & 2 and a & 2) or (not l & 2 and not a & 2))
+
+        if is_180:
+            action = dirs[game.last_action]
+        else:
+            game.last_action = a
+
         game.position = game.position + dir_vectors[dirs.index(action)]
         if not game.is_in_bounds(*game.position):
             raise Loss('outside bounds')
