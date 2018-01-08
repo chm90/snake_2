@@ -24,6 +24,14 @@ from gym import utils
 #        return (self.n,)
 
 # Env-related abstractions
+
+oposite_action = {
+    snake.up_i:snake.down_i,
+    snake.left_i:snake.right_i,
+    snake.right_i:snake.left_i,
+    snake.down_i:snake.up_i
+}
+
 class SnakeEnv(Env,utils.EzPickle):
     def __init__(self, action_space, observation_space, seed=None):
         self.seed_ = seed
@@ -36,13 +44,25 @@ class SnakeEnv(Env,utils.EzPickle):
     def step(self, action):
         score = self.game.score
         info = {}
+        if self.last_action != -1 and oposite_action[action] == self.last_action :
+            action = self.last_action
+        
+        if self.steps_since_apple >= 25:
+            self.game.position = [-1,-1]
+        
         try:
             self.game.next(snake.dirs[action])
+            self.last_action = action
             self.ep_steps +=1
         except snake.GameOver as e:
             info['gameover!'] = str(*e.args)
-
         new_score = self.game.score
+        
+        if new_score - score > 0:
+            self.steps_since_apple = 0
+        else:
+            self.steps_since_apple+=1
+
         reward = float(-10 if self.game.is_over else new_score - score)
         self.ep_rewards += reward
         if self.game.is_over:
@@ -55,7 +75,7 @@ class SnakeEnv(Env,utils.EzPickle):
 
     @property
     def board(self):
-        return self.game.board.reshape(self.shape)
+        return self.game.board.reshape(self.shape) * 85
 
     def reset(self):
         try:
@@ -65,10 +85,12 @@ class SnakeEnv(Env,utils.EzPickle):
         except AttributeError:
             pass
         start_pos = (self.shape[0]//2, self.shape[1]//2)
-        self.game = snake.game(np.zeros(self.shape[:2]), start_pos, seed=self.seed_,apples=100)
+        self.game = snake.game(np.zeros(self.shape[:2]), start_pos, seed=self.seed_,apples=1)
         #return (self.board, 0, False, None)
         self.ep_rewards = 0
         self.ep_steps = 0
+        self.last_action = -1
+        self.steps_since_apple = 0
         
         return self.board
 
@@ -88,7 +110,7 @@ def make_snake(env='Snake-v0', shape=(5,5), num_actions=4, seed=None):
     if env == "Snake-v0":
         if not seed:
             seed = np.random.randint(0, 2**31)
-        return SnakeEnv(Discrete(num_actions),Box(low=0,high=3,shape=shape + (1,)))
+        return SnakeEnv(Discrete(num_actions),Box(low=0,high=255,shape=shape + (1,)))
     else:
         raise Exception("Invalid env {$0}".format(env))
 

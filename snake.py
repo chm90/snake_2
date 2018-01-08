@@ -26,14 +26,11 @@ class game(object):
         game.segments = [game.position]
         game.extensions = extensions
         game.current_cell = snake_segment
-        game.seed = seed
-        if seed:
-            np.random.seed(seed)
         for i in range(apples):
             game.put_apple()
 
     @classmethod
-    def from_size(cls, width, height, **kw):
+    def from_size(cls, width, hewall_iight, **kw):
         return cls(np.zeros((width, height)), (width//2, height//2), **kw)
 
     def is_in_bounds(game, x, y):

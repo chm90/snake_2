@@ -2,6 +2,11 @@
 import sys
 import argparse
 #from baselines import bench, logger
+import tensorflow as tf
+from baselines.a2c.utils import conv, fc, conv_to_fc, batch_to_seq, seq_to_batch, lstm, lnlstm
+from baselines.common.distributions import make_pdtype
+from random import randint
+import numpy as np
 
 def train(num_timesteps, seed, policy):
     from baselines.common import set_global_seeds
@@ -11,7 +16,7 @@ def train(num_timesteps, seed, policy):
     from baselines.common.vec_env.vec_frame_stack import VecFrameStack
     from baselines.common.vec_env.vec_normalize import VecNormalize
     from baselines.ppo2 import ppo2
-    from baselines.ppo2.policies import CnnPolicy, LstmPolicy, LnLstmPolicy
+    from baselines.ppo2.policies import CnnPolicy, LstmPolicy, LnLstmPolicy, MlpPolicy
     from snake_gym import make_snake
     #import logging
     import multiprocessing
@@ -28,8 +33,8 @@ def train(num_timesteps, seed, policy):
 
     def make_env(rank):
         def env_fn():
-            env = make_snake(shape=(40,40))
-            env.seed(seed + rank)
+            env = make_snake(shape=(5,5))
+            env.seed(randint(0,1000000000))
             #print("---------------------------------------------------------------")
             #print(obs.shape)
             #print("---------------------------------------------------------------")
@@ -39,18 +44,56 @@ def train(num_timesteps, seed, policy):
     env = SubprocVecEnv([make_env(i) for i in range(nenvs)])
     set_global_seeds(seed)
     env = VecFrameStack(env, 4) #Potantialy required
-    policy = {'cnn' : CnnPolicy, 'lstm' : LstmPolicy, 'lnlstm' : LnLstmPolicy}[policy]
-    ppo2.learn(policy=policy, env=env, nsteps=128, nminibatches=4,
+    policy = {'cnn' : CnnPolicy, 'lstm' : LstmPolicy, 'lnlstm' : LnLstmPolicy, "mlp": MlpPolicy}[policy]
+    ppo2.learn(policy=MyPolicy, env=env, nsteps=128, nminibatches=4,
         lam=0.95, gamma=0.99, noptepochs=4, log_interval=1,
         ent_coef=.01,
         lr=lambda f : f * 2.5e-4,
         cliprange=lambda f : f * 0.1,
         total_timesteps=int(num_timesteps * 1.1))
 
+class MyPolicy(object):
+
+    def __init__(self, sess, ob_space, ac_space, nbatch, nsteps, reuse=False): #pylint: disable=W0613
+        nh, nw, nc = ob_space.shape
+        ob_shape = (nbatch, nh, nw, nc)
+        nact = ac_space.n
+        X = tf.placeholder(tf.uint8, ob_shape) #obs
+        with tf.variable_scope("model", reuse=reuse):
+            #h = conv(tf.cast(X, tf.float32)/255., 'c1', nf=32, rf=8, stride=4, init_scale=np.sqrt(2))
+            #h2 = conv(h, 'c2', nf=64, rf=4, stride=2, init_scale=np.sqrt(2))
+            #h3 = conv(h2, 'c3', nf=64, rf=3, stride=1, init_scale=np.sqrt(2))
+            h3 = conv_to_fc(tf.cast(X, tf.float32)/255)
+            h4 = fc(h3, 'fc1', nh=128, init_scale=np.sqrt(2))
+            pi = fc(h4, 'pi', nact, act=lambda x:x, init_scale=0.01)
+            vf = fc(h4, 'v', 1, act=lambda x:x)[:,0]
+
+        self.pdtype = make_pdtype(ac_space)
+        self.pd = self.pdtype.pdfromflat(pi)
+
+        a0 = self.pd.sample()
+        neglogp0 = self.pd.neglogp(a0)
+        self.initial_state = None
+
+        def step(ob, *_args, **_kwargs):
+            a, v, neglogp = sess.run([a0, vf, neglogp0], {X:ob})
+            return a, v, self.initial_state, neglogp
+
+        def value(ob, *_args, **_kwargs):
+            return sess.run(vf, {X:ob})
+
+        self.X = X
+        self.pi = pi
+        self.vf = vf
+        self.step = step
+        self.value = value
+
+
+
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
-    parser.add_argument('--policy', help='Policy architecture', choices=['cnn', 'lstm', 'lnlstm'], default='cnn')
+    parser.add_argument('--policy', help='Policy architecture', choices=['cnn', 'lstm', 'lnlstm',"mlp"], default='cnn')
     parser.add_argument('--num-timesteps', type=int, default=int(10e6))
     args = parser.parse_args()
     #logger.configure()
