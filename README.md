@@ -53,4 +53,6 @@ We use the PPO model for training bacause of its good tradeoff between easy para
 
 ## Results
 
+Training the PPO model on a 5x5 snake board on a nvida 670 GTX and 4 core intel core i7 cpu for aproximately 6 hours gave a average score of 70 for the snake and a maximum socore of 115.
+
 <iframe width="560" height="315" src="https://www.youtube.com/embed/TtF2Qfnxu-k" frameborder="0" gesture="media" allow="encrypted-media" allowfullscreen></iframe>
