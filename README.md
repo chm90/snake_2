@@ -53,10 +53,4 @@ We use the PPO model for training bacause of its good tradeoff between easy para
 
 ## Results
 
-
-
-
-
-There are approximately as many states in a five-by-five game of snake as there are ants on Earth -- about 100 000 000 000 000 000. [1] Problematic. How to deal? Well, we reduce the state space to the eight cells surrounding the ant. I mean snake. Then we use plain Q learning. Probably will try some other function estimator in the future. That will be on-policy though (i.e. uses the same policy to estimate value as it does to choose actions) as opposed to the Q learning which simply takes the next state's best action as the value.
-
-  [1] https://www.quora.com/How-many-ants-are-there-in-the-world
+<iframe width="560" height="315" src="https://www.youtube.com/embed/TtF2Qfnxu-k" frameborder="0" gesture="media" allow="encrypted-media" allowfullscreen></iframe>
