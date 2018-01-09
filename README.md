@@ -27,8 +27,8 @@ Snake it don't break it.
 
 ## Why do we snake?
 
-It might seem like a task that would be easy to solv with traditional nethod, why solve with learning?
-It turns out that we have an extreme amount of states, and that makes it a hard learning problem, but for which deep learning is well suited.
+It might seem like a task that would be easy to solve with traditional method, why solve with learning?
+It turns out that we have an extremely high number of states, and that makes it a hard learning problem, but for which deep learning is well suited.
 
 ## Requirements
 
@@ -38,22 +38,22 @@ It turns out that we have an extreme amount of states, and that makes it a hard 
 
 ## Models
 
-We have conducted experiments with 3 r.l models which we will discuss briefly bellow.
+We have conducted experiments with 3 r.l models that we discuss briefly below.
 
 ### DQN
 
-Deep Q learning is basically pure Q-learning, using a deep network as the Q-value estimator isntead of the tradittional table. This enables DQN to work in much larger state spaces such as snake. Except for using a deep net, DQN allso uses several tricks to make the deep learning converge, like using experience replay and importance sampling, i.e sampling experience based on relevance. The main reason using an experience buffer is required in the dqn approach is that deep networks require updates to be uncorrelated, so we cant just apply the updates we recieve from the environment right away, since this would brake that premise.
+Deep Q learning is basically pure Q-learning, using a deep network as the Q-value estimator instead of the traditional table. This enables DQN to work in much larger state spaces such as snake. Except for using a deep net, DQN also uses several tricks to make the deep learning converge, like using experience replay and importance sampling, i.e sampling experience based on relevance. The main reason using an experience buffer is required in the dqn approach is that deep networks require updates to be uncorrelated, so we cant just apply the updates we receive from the environment right away, since this would brake that premise.
 
 ### A2C
 
-A2C stands for Advantage Actor-Critic. By using multiple environments to provide uncorrelated updates instead of replay memmory,A3C gains much in computational and conseptual complexity. A3C uses an actor critic based approach where instead of learning only the Q-value(the critic), an actor is learned as well using the policy gradient approach. This policy gradient is improved using the learned critic. 
+A2C stands for Advantage Actor-Critic. By using multiple environments to provide uncorrelated updates instead of replay memory, A3C gains much in computational and conceptual complexity. A3C uses an actor critic based approach where instead of learning only the Q-value(the critic), an actor is learned as well using the policy gradient approach. This policy gradient is improved using the learned critic. 
 
 ### PPO
-We use the PPO model for training bacause of its good tradeoff between easy parameter tuning, fast convergence and simplicity. The PPO model is a policy gradient based approach. We are using it in a setting closly related to A2C, in that it is a Actor Critic based approach,where both actor and critic networks are trained. The critic is then used to learn the actor in a more efficent manner. The main innovation of PPO over A2C is that it uses a novel Policy gradient formulation, which hinders extensively large policy updates. We use a 3 layer mlp as our network, with distinct final layers for the value and policy parts.
+We use the PPO model for training because of its good trade-off between easy parameter tuning, fast convergence and simplicity. The PPO model is a policy gradient based approach. We are using it in a setting closely related to A2C, in that it is a Actor Critic based approach,where both actor and critic networks are trained. The critic is then used to learn the actor in a more efficient manner. The main innovation of PPO over A2C is that it uses a novel Policy gradient formulation, which hinders extensively large policy updates. We use a 3 layer mlp as our network, with distinct final layers for the value and policy parts.
 
 ## Results
 
-Training the PPO model on a 5x5 snake board on a nvida 670 GTX and 4 core intel core i7 cpu for aproximately 6 hours gave a average score of 70 for the snake and a maximum socore of 115. Check video bellow for an example of the snake.
+Training the PPO model on a 5x5 snake board on a nvidia 670 GTX and 4 core intel core i7 cpu for approximately 6 hours gave a average score of 70 for the snake and a maximum score of 115. Check video bellow for an example of the snake.
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=TtF2Qfnxu-k
 " target="_blank"><img src="http://img.youtube.com/vi/TtF2Qfnxu-k/0.jpg" 
