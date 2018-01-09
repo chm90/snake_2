@@ -12,8 +12,7 @@ def train(num_timesteps, seed, policy):
     from baselines.common.vec_env.vec_frame_stack import VecFrameStack
     from baselines.common.vec_env.vec_normalize import VecNormalize
     from baselines.ppo2 import ppo2
-    from baselines.ppo2.policies import CnnPolicy, LstmPolicy, LnLstmPolicy
-    from snake_gym import make_snake
+    from baselines.ppo2.policies import CnnPolicy, LstmPolicy, LnLstmPolicy, CnnPolicy2h
     import logging
     import multiprocessing
     import os.path as osp
@@ -41,10 +40,15 @@ def train(num_timesteps, seed, policy):
     env = SubprocVecEnv([make_env(i) for i in range(nenvs)])
     set_global_seeds(seed)
     env = VecFrameStack(env, 4) #Potantialy required
-    policy = {'cnn' : CnnPolicy, 'lstm' : LstmPolicy, 'lnlstm' : LnLstmPolicy}[policy]
+    policy = {
+        'cnn' : CnnPolicy,
+        'lstm' : LstmPolicy,
+        'lnlstm' : LnLstmPolicy,
+        'cnn2h': CnnPolicy2h # simpler 2-layer cnn
+    }[policy]
     ppo2.learn(policy=policy, env=env, nsteps=128, nminibatches=4,
         lam=0.95, gamma=0.99, noptepochs=4, log_interval=10,
-        save_interval=int(10000),
+        save_interval=int(1000),
         ent_coef=.01,
         lr=lambda f : f * 2.5e-4,
         cliprange=lambda f : f * 0.1,
