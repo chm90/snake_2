@@ -28,7 +28,7 @@ Snake it don't break it.
 ## Why do we snake?
 
 It might seem like a task that would be easy to solv with traditional nethod, why solve with learning?
-It turns out that we have an extreme amount of states, and that makes it a hard learning problem, but for which deep learnign is well suited.
+It turns out that we have an extreme amount of states, and that makes it a hard learning problem, but for which deep learning is well suited.
 
 ## Requirements
 
