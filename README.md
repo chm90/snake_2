@@ -35,7 +35,6 @@ Snake has the benefit to be easily scalable in terms of complexity by just incre
 
 ## Requirements
 
-1. OpenAI baselines
 1. We use a modified version of open ai baselines. Install https://github.com/chm90/baselines.
 2. Tensorflow
 3. Bunch of other stuff in general
@@ -67,5 +66,5 @@ Training the PPO model on a 5x5 snake board on a nvidia 670 GTX and 4 core intel
 alt="PPO snake" width="240" height="180" border="10" /></a>
 
 
-![a2c](https://imgur.com/a/GgjeW)
+![Training with A2C](https://i.imgur.com/1Sw0Ppn.png)
 Figure of mean episode length (top) and reward (bottom) during a a2c training session of about 10 million steps. It shows the difficulty barrier met when the agent has grasped how to stay alive longer and starts to eat more apples increasing its score but also the number of states that it will die in.
